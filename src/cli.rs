@@ -1,13 +1,12 @@
-use clap::Parser;
+use crate::consts::{HYPRTHEME_CONFIG, THEME_DOWNLOAD_DIR, THEME_LIST};
 use anyhow::{anyhow, Result};
+use clap::Parser;
 use expanduser::expanduser;
 use std::path::PathBuf;
-use crate::consts::{HYPRTHEME_CONFIG, THEME_DOWNLOAD_DIR, THEME_LIST};
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
-pub struct CliParser{
-
+pub struct CliParser {
     /// The path to the hyprtheme config file.
     // #[arg(long,value_parser=parse_path,default_value=HYPRTHEME_CONFIG)]
     // pub config: PathBuf,
@@ -43,7 +42,6 @@ pub enum CliCommands {
     /// Update the installed theme
     Update(UpdateArgs),
 
-
     /// Enable an installed theme
     Enable(EnableArgs),
 
@@ -54,37 +52,36 @@ pub enum CliCommands {
     Init,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct DisableArgs {
     /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to disable
     #[arg()]
     pub theme_id: String,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct EnableArgs {
     /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to enable
     #[arg()]
     pub theme_id: String,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct List {
-   
     /// show installed themes
-    #[arg(short,long)]
+    #[arg(short, long)]
     pub installed: bool,
 
     /// show online themes excluding the ones already installed
-    #[arg(short,long)]
+    #[arg(short, long)]
     pub online: bool,
 
     /// whether to show already installed themes while listing online themes
-    #[arg(short,long, requires="online")]
-    pub show_installed: bool,    
+    #[arg(short, long, requires = "online")]
+    pub show_installed: bool,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct InstallArgs {
     #[arg(short, long, group = "source")]
     pub git: Option<String>,
@@ -97,24 +94,22 @@ pub struct InstallArgs {
     pub theme_id: Option<String>,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct UninstallArgs {
     /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to uninstall
     #[arg()]
     pub theme_id: String,
 }
 
-#[derive(Parser,Clone)]
+#[derive(Parser, Clone)]
 pub struct UpdateArgs {
     /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to update
     #[arg()]
     pub theme_id: String,
-
 }
 
-#[derive(Parser,Clone)]
-pub struct CleanAllArgs {
-}
+#[derive(Parser, Clone)]
+pub struct CleanAllArgs {}
 
 pub fn parse_path(path: &str) -> Result<PathBuf> {
     let path: PathBuf = expanduser(path).expect("Failed to expand path");

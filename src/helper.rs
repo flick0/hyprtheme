@@ -1,5 +1,5 @@
-use std::{f32::consts::E, path::PathBuf};
 use anyhow::Result;
+use std::{f32::consts::E, path::PathBuf};
 
 use crate::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
 
@@ -10,29 +10,33 @@ pub fn reload_hyprctl() {
         .expect("Failed to reload hyprctl");
 }
 
-pub fn sanitize_name(name:&str) -> String{
+pub fn sanitize_name(name: &str) -> String {
     let mut name = name.to_string();
-    name = name.replace(" ","-");
-    name = name.replace("_","-");
-    name = name.replace(".","-");
-    name = name.replace("/","-");
-    name = name.replace("\\","-");
-    name = name.replace(":","-");
-    name = name.replace("*","-");
-    name = name.replace("?","-");
-    name = name.replace("\"","-");
-    name = name.replace("<","-");
-    name = name.replace(">","-");
-    name = name.replace("|","-");
+    name = name.replace(" ", "-");
+    name = name.replace("_", "-");
+    name = name.replace(".", "-");
+    name = name.replace("/", "-");
+    name = name.replace("\\", "-");
+    name = name.replace(":", "-");
+    name = name.replace("*", "-");
+    name = name.replace("?", "-");
+    name = name.replace("\"", "-");
+    name = name.replace("<", "-");
+    name = name.replace(">", "-");
+    name = name.replace("|", "-");
     return name;
 }
 
-pub async fn identify_theme(theme_id:&str,theme_dirs:&Vec<PathBuf>,theme_urls:&Vec<String>) -> Result<Box<dyn ThemeType>>{
+pub async fn identify_theme(
+    theme_id: &str,
+    theme_dirs: &Vec<PathBuf>,
+    theme_urls: &Vec<String>,
+) -> Result<Box<dyn ThemeType>> {
     let mut matches = Vec::new();
 
     match fetch_all(theme_urls, theme_dirs).await {
         Ok(themes) => {
-            for theme in themes{
+            for theme in themes {
                 if theme.get_id().to_string().to_lowercase() == theme_id.to_lowercase() {
                     matches.clear();
                     matches.push(theme);
@@ -49,24 +53,24 @@ pub async fn identify_theme(theme_id:&str,theme_dirs:&Vec<PathBuf>,theme_urls:&V
     }
 
     return match matches.len() {
-        0 => {
-            Err(anyhow::anyhow!("No themes found with id: {}", theme_id))
-        }
-        1 => {
-            Ok(matches.remove(0))
-        }
-        _ => {
-            Err(anyhow::anyhow!("Multiple themes found with id: {}", theme_id))
-        }
-    }
+        0 => Err(anyhow::anyhow!("No themes found with id: {}", theme_id)),
+        1 => Ok(matches.remove(0)),
+        _ => Err(anyhow::anyhow!(
+            "Multiple themes found with id: {}",
+            theme_id
+        )),
+    };
 }
 
-pub async fn identify_offline_theme(theme_id:&str,theme_dirs:&Vec<PathBuf>) -> Result<Box<dyn ThemeType>>{
+pub async fn identify_offline_theme(
+    theme_id: &str,
+    theme_dirs: &Vec<PathBuf>,
+) -> Result<Box<dyn ThemeType>> {
     let mut matches = Vec::new();
 
     match fetch_all_installed(theme_dirs).await {
         Ok(themes) => {
-            for theme in themes{
+            for theme in themes {
                 if theme.get_id().to_string().to_lowercase() == theme_id.to_lowercase() {
                     matches.push(theme);
                     break;
@@ -82,15 +86,11 @@ pub async fn identify_offline_theme(theme_id:&str,theme_dirs:&Vec<PathBuf>) -> R
     }
 
     return match matches.len() {
-        0 => {
-            Err(anyhow::anyhow!("No themes found with id: {}", theme_id))
-        }
-        1 => {
-            Ok(matches.remove(0))
-        }
-        _ => {
-            Err(anyhow::anyhow!("Multiple themes found with id: {}", theme_id))
-        }
-    }
+        0 => Err(anyhow::anyhow!("No themes found with id: {}", theme_id)),
+        1 => Ok(matches.remove(0)),
+        _ => Err(anyhow::anyhow!(
+            "Multiple themes found with id: {}",
+            theme_id
+        )),
+    };
 }
-

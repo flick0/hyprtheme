@@ -1,28 +1,32 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use serde::Deserialize;
 use expanduser::expanduser;
+use serde::Deserialize;
 
-use crate::theme::{fetch_all_installed, installed::InstalledTheme, online::OnlineTheme, toml_config::{ConfigModule, ConfigTheme}, ThemeType};
+use crate::theme::{
+    fetch_all_installed,
+    installed::InstalledTheme,
+    online::OnlineTheme,
+    toml_config::{ConfigModule, ConfigTheme},
+    ThemeType,
+};
 
-
-pub async fn get_enabled_themes(theme_dirs:&Vec<PathBuf>) -> Result<Vec<InstalledTheme>>{
-
+pub async fn get_enabled_themes(theme_dirs: &Vec<PathBuf>) -> Result<Vec<InstalledTheme>> {
     let mut enabled_themes = Vec::new();
 
     match fetch_all_installed(theme_dirs).await {
         Ok(themes) => {
-            for theme in themes{
+            for theme in themes {
                 match theme.as_any() {
                     t if t.is::<InstalledTheme>() => {
                         let theme = t.downcast_ref::<InstalledTheme>().unwrap().to_owned();
 
                         if theme.config.enabled {
-                            enabled_themes.push(theme); 
+                            enabled_themes.push(theme);
                         }
-                    }   
-                    _ => return Err(anyhow::anyhow!("Invalid theme type"))
+                    }
+                    _ => return Err(anyhow::anyhow!("Invalid theme type")),
                 }
             }
         }
@@ -35,14 +39,12 @@ pub async fn get_enabled_themes(theme_dirs:&Vec<PathBuf>) -> Result<Vec<Installe
     return Ok(enabled_themes);
 }
 
-pub async fn get_all_source_paths(theme_dirs:&Vec<PathBuf>) -> Result<Vec<PathBuf>>{
-
+pub async fn get_all_source_paths(theme_dirs: &Vec<PathBuf>) -> Result<Vec<PathBuf>> {
     let mut source_paths = Vec::new();
 
     match get_enabled_themes(theme_dirs).await {
         Ok(themes) => {
-            for theme in themes{
-                
+            for theme in themes {
                 source_paths.push(theme.config.theme.config.to_owned());
 
                 for module in &theme.get_enabled_modules() {
@@ -60,9 +62,9 @@ pub async fn get_all_source_paths(theme_dirs:&Vec<PathBuf>) -> Result<Vec<PathBu
     }
 
     Ok(source_paths)
-}  
+}
 
-pub async fn init(theme_dirs:&Vec<PathBuf>) -> Result<()> {
+pub async fn init(theme_dirs: &Vec<PathBuf>) -> Result<()> {
     match get_enabled_themes(theme_dirs).await {
         Ok(themes) => {
             for theme in themes {
@@ -75,5 +77,5 @@ pub async fn init(theme_dirs:&Vec<PathBuf>) -> Result<()> {
         }
     }
 
-    return Ok(())
+    return Ok(());
 }

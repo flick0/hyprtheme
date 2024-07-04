@@ -7,34 +7,28 @@ use git2::build::RepoBuilder;
 
 use crate::helper::sanitize_name;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct OnlineTheme {
     pub partial: Theme,
 }
 
 impl OnlineTheme {
     pub fn from_theme(partial: Theme) -> OnlineTheme {
-        OnlineTheme {
-            partial,
-        }
+        OnlineTheme { partial }
     }
 
-    pub fn download(self, theme_dir:&PathBuf) -> Result<InstalledTheme> {
+    pub fn download(self, theme_dir: &PathBuf) -> Result<InstalledTheme> {
         let url = &self.partial.repo;
         let branch = sanitize_name(&self.partial.branch.clone().unwrap_or("main".to_string()));
 
         let into = theme_dir.join(&self.partial.name);
 
-        match RepoBuilder::new()
-            .branch(branch.as_str())
-            .clone(url, &into) {
-                Ok(_) => {
-                    InstalledTheme::from_file(&into.join("hyprtheme.toml"),None)
-                },
-                Err(e) => {
-                    return Err(anyhow::anyhow!("Failed to clone theme: {}", e));
-                }
+        match RepoBuilder::new().branch(branch.as_str()).clone(url, &into) {
+            Ok(_) => InstalledTheme::from_file(&into.join("hyprtheme.toml"), None),
+            Err(e) => {
+                return Err(anyhow::anyhow!("Failed to clone theme: {}", e));
             }
+        }
     }
 }
 
@@ -48,7 +42,7 @@ impl ThemeType for OnlineTheme {
     }
 
     fn get_id(&self) -> ThemeId {
-        ThemeId{
+        ThemeId {
             repo: self.partial.repo.clone(),
             branch: self.partial.branch.clone(),
         }

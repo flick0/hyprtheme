@@ -2,15 +2,15 @@ use crate::helper::reload_hyprctl;
 
 use super::online::OnlineTheme;
 use super::toml_config::Config;
-use super::{Theme,ThemeType,ThemeId};
+use super::{Theme, ThemeId, ThemeType};
 
 use expanduser::expanduser;
 
-use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use git2::Repository;
+use std::path::PathBuf;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct InstalledTheme {
     pub config: Config,
     pub path: PathBuf,
@@ -21,37 +21,34 @@ pub struct InstalledTheme {
 }
 
 impl InstalledTheme {
-
     pub fn from_dir(path: &PathBuf, parent_config_path: Option<PathBuf>) -> Result<InstalledTheme> {
-        
         let config_path = path.join("theme.toml");
         match Config::from_toml_file(&config_path) {
-            Ok(config) => {
-                Ok(InstalledTheme {
-                    config:config.clone(),
-                    path:config_path.clone(),
-                    parent_dir: path.clone(),
-                    partial: Theme::new(
-                        config.name,
-                        config.repo,
-                        config.branch,
-                        config.desc,
-                        Vec::new(),
-                    ),
-                    parent_config_path
-                })
-            }
-            Err(e) => {
-                Err(e.into())
-            }
+            Ok(config) => Ok(InstalledTheme {
+                config: config.clone(),
+                path: config_path.clone(),
+                parent_dir: path.clone(),
+                partial: Theme::new(
+                    config.name,
+                    config.repo,
+                    config.branch,
+                    config.desc,
+                    Vec::new(),
+                ),
+                parent_config_path,
+            }),
+            Err(e) => Err(e.into()),
         }
     }
 
-    pub fn from_file(path: &PathBuf, parent_config_path: Option<PathBuf>) -> Result<InstalledTheme> {
+    pub fn from_file(
+        path: &PathBuf,
+        parent_config_path: Option<PathBuf>,
+    ) -> Result<InstalledTheme> {
         match Config::from_toml_file(path) {
             Ok(config) => Ok(InstalledTheme {
-                config:config.clone(),
-                path:path.clone(),
+                config: config.clone(),
+                path: path.clone(),
                 parent_dir: path.parent().unwrap().to_path_buf(),
                 partial: Theme::new(
                     config.name,
@@ -60,7 +57,7 @@ impl InstalledTheme {
                     config.desc,
                     Vec::new(),
                 ),
-                parent_config_path
+                parent_config_path,
             }),
             Err(e) => Err(e),
         }
@@ -69,11 +66,13 @@ impl InstalledTheme {
     pub fn update(&self) -> Result<()> {
         let repo = Repository::open(&self.parent_dir)?;
         let mut remote = repo.find_remote("origin")?;
-        match remote.fetch(&[&self.partial.branch.clone().unwrap_or("master".to_string())], None, None) {
+        match remote.fetch(
+            &[&self.partial.branch.clone().unwrap_or("master".to_string())],
+            None,
+            None,
+        ) {
             Ok(_) => Ok(()),
-            Err(e) => {
-                Err(e.into())
-            }
+            Err(e) => Err(e.into()),
         }
     }
 
@@ -109,10 +108,10 @@ impl InstalledTheme {
         modules
     }
 
-    pub fn get_links(&self) -> Vec<(PathBuf,PathBuf)> {
+    pub fn get_links(&self) -> Vec<(PathBuf, PathBuf)> {
         let mut links = Vec::new();
         for link in &self.config.link {
-            links.push((link.from.clone(),link.to.clone()));
+            links.push((link.from.clone(), link.to.clone()));
         }
         links
     }
@@ -145,7 +144,7 @@ impl InstalledTheme {
         if let Some(load) = &self.config.theme.load {
             let path = expanduser(self.parent_dir.join(load).to_str().unwrap()).unwrap();
             match std::process::Command::new(path).output() {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => eprintln!("Failed to run load script for theme: {}", e),
             }
         }
@@ -155,7 +154,7 @@ impl InstalledTheme {
         if let Some(unload) = &self.config.theme.unload {
             let path = expanduser(self.parent_dir.join(unload).to_str().unwrap()).unwrap();
             match std::process::Command::new(path).output() {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => eprintln!("Failed to run unload script for theme: {}", e),
             }
         }
@@ -181,7 +180,6 @@ impl InstalledTheme {
     }
 
     pub fn run_hyprctl_source(&self) {
-
         let mut path = self.parent_dir.join(&self.config.theme.config);
 
         path = expanduser(path.to_str().unwrap()).unwrap();
@@ -190,13 +188,10 @@ impl InstalledTheme {
 
         println!("Running: {}", cmd);
 
-        match std::process::Command::new("sh")
-            .arg("-c")
-            .arg(cmd)
-            .output() {
-                Ok(out) => println!("output: {}", String::from_utf8_lossy(&out.stdout)),
-                Err(e) => eprintln!("Failed to run hyprctl source: {}", e),
-            }
+        match std::process::Command::new("sh").arg("-c").arg(cmd).output() {
+            Ok(out) => println!("output: {}", String::from_utf8_lossy(&out.stdout)),
+            Err(e) => eprintln!("Failed to run hyprctl source: {}", e),
+        }
     }
 
     pub fn enable(&mut self) -> Result<()> {
@@ -224,8 +219,8 @@ impl InstalledTheme {
         }
 
         match self.save() {
-            Ok(_) => {},
-            Err(e) => return Err(anyhow!("error saving file on enable: {}",e)),
+            Ok(_) => {}
+            Err(e) => return Err(anyhow!("error saving file on enable: {}", e)),
         };
 
         self.run_hyprctl_source();
@@ -258,7 +253,7 @@ impl InstalledTheme {
         }
 
         match self.save() {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => return Err(e),
         };
 
@@ -276,7 +271,7 @@ impl ThemeType for InstalledTheme {
     }
 
     fn get_id(&self) -> ThemeId {
-        ThemeId{
+        ThemeId {
             repo: self.partial.repo.clone(),
             branch: self.partial.branch.clone(),
         }
@@ -301,5 +296,4 @@ impl ThemeType for InstalledTheme {
     fn get_images(&self) -> Vec<String> {
         self.partial.images.clone()
     }
-
 }

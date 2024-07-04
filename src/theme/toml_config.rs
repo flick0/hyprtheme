@@ -1,11 +1,10 @@
 // use crate::theme::{helper::{create_theme_id, ThemeId}};
-use serde::{Deserialize,Serialize};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use anyhow::Result;
 
-
-#[derive(Deserialize,Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Config {
     pub name: String,
     pub desc: String,
@@ -27,11 +26,10 @@ pub struct Config {
     pub link: Vec<ConfigLink>,
 }
 
-#[derive(Deserialize,Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ConfigTheme {
     pub config: PathBuf,
     // pub minimum_hyprland_version: String,
-
     pub load: Option<String>,
     pub unload: Option<String>,
 }
@@ -49,22 +47,19 @@ pub struct ConfigTheme {
 //     // pub minimum_hyprland_version: Option<String>,
 // }
 
-#[derive(Deserialize,Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ConfigModule {
-    
     #[serde(default)]
-    pub enabled:bool,
+    pub enabled: bool,
 
     pub config: PathBuf,
-
     // pub minimum_hyprland_version: Option<String>,
 }
 
-#[derive(Deserialize,Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ConfigLink {
     pub from: PathBuf,
     pub to: PathBuf,
-
     // #[serde(default)]
     // pub ignore: Vec<PathBuf>,
     // #[serde(default)]
