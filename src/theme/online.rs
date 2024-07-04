@@ -29,7 +29,7 @@ impl OnlineTheme {
             .branch(branch.as_str())
             .clone(url, &into) {
                 Ok(_) => {
-                    InstalledTheme::from_file(&into.join("hyprtheme.toml"))
+                    InstalledTheme::from_file(&into.join("hyprtheme.toml"),None)
                 },
                 Err(e) => {
                     return Err(anyhow::anyhow!("Failed to clone theme: {}", e));

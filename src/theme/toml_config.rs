@@ -1,11 +1,11 @@
 // use crate::theme::{helper::{create_theme_id, ThemeId}};
-use serde::Deserialize;
+use serde::{Deserialize,Serialize};
 use std::path::PathBuf;
 
 use anyhow::Result;
 
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize,Serialize, Debug, Clone)]
 pub struct Config {
     pub name: String,
     pub desc: String,
@@ -14,17 +14,20 @@ pub struct Config {
     pub repo: String,
     pub branch: Option<String>,
 
+    #[serde(default)]
+    pub enabled: bool,
+
     pub theme: ConfigTheme,
 
-    #[serde(default)]
-    pub hypr_module: Vec<ConfigHyprModule>,
+    // #[serde(default)]
+    // pub hypr_module: Vec<ConfigHyprModule>,
     #[serde(default)]
     pub module: Vec<ConfigModule>,
     #[serde(default)]
     pub link: Vec<ConfigLink>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize,Serialize, Debug, Clone)]
 pub struct ConfigTheme {
     pub config: PathBuf,
     // pub minimum_hyprland_version: String,
@@ -33,31 +36,31 @@ pub struct ConfigTheme {
     pub unload: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct ConfigHyprModule {
-    pub name: String,
-    pub desc: String,
+// #[derive(Deserialize,Serialize, Debug, Clone)]
+// pub struct ConfigHyprModule {
+//     pub name: String,
+//     pub desc: String,
 
-    // #[serde(default)]
-    // pub enabled: bool,
+//     #[serde(default)]
+//     pub enabled: bool,
 
-    pub config: PathBuf,
+//     pub config: PathBuf,
 
-    // pub minimum_hyprland_version: Option<String>,
-}
+//     // pub minimum_hyprland_version: Option<String>,
+// }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize,Serialize, Debug, Clone)]
 pub struct ConfigModule {
     
-    // #[serde(default)]
-    // pub enabled:Option<bool>,
+    #[serde(default)]
+    pub enabled:bool,
 
     pub config: PathBuf,
 
     // pub minimum_hyprland_version: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize,Serialize, Debug, Clone)]
 pub struct ConfigLink {
     pub from: PathBuf,
     pub to: PathBuf,

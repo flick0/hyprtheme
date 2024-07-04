@@ -1,6 +1,5 @@
 use std::{fmt::Display, path::PathBuf};
 
-// pub mod legacy;
 pub mod toml_config;
 pub mod installed;
 pub mod online;
@@ -15,7 +14,6 @@ use reqwest::Client;
 
 
 use installed::InstalledTheme;
-// use legacy::LegacyTheme;
 
 
 
@@ -58,6 +56,10 @@ impl PartialEq for ThemeId {
     fn eq(&self, other: &Self) -> bool {
 
         if self.repo == "unknown" || other.repo == "unknown" {
+            return false;
+        }
+
+        if self.repo == "" || other.repo == "" {
             return false;
         }
 
@@ -122,46 +124,6 @@ impl Theme{
     }
 }
 
-// pub async fn fetch_legacy(themes_dir: &PathBuf) -> Result<Vec<LegacyTheme>> {
-//     let mut themes: Vec<LegacyTheme> = Vec::new();
-
-//     for entry in std::fs::read_dir(themes_dir)? {
-//         let entry = entry?;
-//         let path = entry.path();
-
-//         if path.is_dir() {
-//             let config_path = path.join("theme.conf");
-//             if config_path.exists() && config_path.is_file() {
-//                 themes.push(
-//                     match path.file_name() {
-//                         Some(name) => {
-//                             let partial = Theme {
-//                                 name: name.to_string_lossy().to_string(),
-//                                 repo: String::new(),
-//                                 branch: None,
-//                                 config: None,
-//                                 desc: String::new(),
-//                                 images: Vec::new(),
-//                             };
-//                             LegacyTheme {
-//                                 installed: true,
-//                                 partial,
-//                             }
-//                         },
-//                         None => {
-//                             eprintln!("failed parsing theme name for path: {:?}", path);
-//                             continue
-//                         },
-//                     }
-//                 );
-//             }
-//         }
-//     }
-
-//     Ok(themes)
-// }
-
-
 pub async fn fetch_installed(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme>> {
     let mut themes: Vec<InstalledTheme> = Vec::new();
 
@@ -172,7 +134,7 @@ pub async fn fetch_installed(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme>
         if path.is_dir() {
             let config_path = path.join("hyprtheme.toml");
             if config_path.exists() && config_path.is_file() {
-                match InstalledTheme::from_file(&config_path) {
+                match InstalledTheme::from_file(&config_path,None) {
                     Ok(theme) => {
                         themes.push(theme);
                     }
@@ -227,17 +189,6 @@ pub async fn fetch_all_installed(directories: &Vec<PathBuf>) -> Result<Vec<Box<d
     let mut themes:Vec<Box<dyn ThemeType>> = Vec::new();
 
     for dir in directories {
-        // match fetch_legacy(&dir).await {
-        //     Ok(legacy_themes) => {
-        //         for theme in legacy_themes{
-        //             themes.push(Box::new(theme.clone()));
-        //         }
-        //     }
-        //     Err(e) => {
-        //         eprintln!("Failed to fetch legacy themes({:?}) : {:?}", dir,e);
-        //     }
-        // }
-        
         match fetch_installed(&dir).await {
             Ok(installed_themes) => {
                 for theme in installed_themes{
@@ -259,18 +210,6 @@ pub async fn fetch_all(urls:&Vec<String>, directories: &Vec<PathBuf>) -> Result<
     let mut theme_ids: Vec<ThemeId> = Vec::new();
     
     for dir in directories {
-        // match fetch_legacy(&dir).await {
-        //     Ok(legacy_themes) => {
-        //         for theme in legacy_themes{
-        //             themes.push(Box::new(theme.clone()));
-        //             theme_ids.push(ThemeId::from_theme(Box::new(theme)));
-        //         }
-        //     }
-        //     Err(e) => {
-        //         eprintln!("Failed to fetch legacy themes({:?}) : {:?}", dir,e);
-        //     }
-        // }
-        
         match fetch_installed(&dir).await {
             Ok(installed_themes) => {
                 for theme in installed_themes{

@@ -2,25 +2,22 @@ use clap::Parser;
 use anyhow::{anyhow, Result};
 use expanduser::expanduser;
 use std::path::PathBuf;
+use crate::consts::{HYPRTHEME_CONFIG, THEME_DOWNLOAD_DIR, THEME_LIST};
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
 pub struct CliParser{
 
-    /// The path to the hyprland config directory.
-    #[arg(long,value_parser=parse_path,default_value="~/.config/hypr/")]
-    pub hypr_dir: PathBuf,
-
-    // /// The path to the hyprtheme data directory.
-    // #[arg(short, long, value_parser=parse_path, default_value="~/.config/hypr/themes/")]
-    // pub themes_dir: PathBuf,
+    /// The path to the hyprtheme config file.
+    // #[arg(long,value_parser=parse_path,default_value=HYPRTHEME_CONFIG)]
+    // pub config: PathBuf,
 
     /// path where themes are stored, can be repeated to add multiple directories
-    #[arg(short, long, value_parser=parse_path, default_value="~/.config/hyprtheme/themes")]
+    #[arg(short, long, value_parser=parse_path, default_value=THEME_DOWNLOAD_DIR)]
     pub theme_dirs: Vec<PathBuf>,
 
     /// url to raw text files containing a list of themes in json, can be repeated to add multiple urls
-    #[arg(short, long, default_value="https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true")]
+    #[arg(short, long, default_value=THEME_LIST)]
     pub theme_urls: Vec<String>,
 
     #[command(subcommand)]
@@ -46,23 +43,30 @@ pub enum CliCommands {
     /// Update the installed theme
     Update(UpdateArgs),
 
-    // will replace with flags
-    // /// Remove a saved theme from the data directory
-    // ///
-    // /// Takes a saved theme ID. Use the list command to get the ID.
-    // Remove(RemoveArgs),
+
+    /// Enable an installed theme
+    Enable(EnableArgs),
+
+    /// Disable an installed theme
+    Disable(DisableArgs),
+
+    /// Source all enabled themes and modules
+    Init,
 }
 
-// #[derive(Parser,Clone)]
-// pub struct RemoveArgs {
-//     /// The name of the theme to remove from the data directory
-//     #[arg(short, long)]
-//     pub theme_name: String,
+#[derive(Parser,Clone)]
+pub struct DisableArgs {
+    /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to disable
+    #[arg()]
+    pub theme_id: String,
+}
 
-//     /// The data directory of Hyprtheme, by default in `~/.local/share/hyprtheme/`
-//     #[arg(short, long, value_parser=parse_path)]
-//     pub data_dir: Option<PathBuf>,
-// }
+#[derive(Parser,Clone)]
+pub struct EnableArgs {
+    /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to enable
+    #[arg()]
+    pub theme_id: String,
+}
 
 #[derive(Parser,Clone)]
 pub struct List {
@@ -77,30 +81,18 @@ pub struct List {
 
     /// whether to show already installed themes while listing online themes
     #[arg(short,long, requires="online")]
-    pub show_installed: bool,
-
-    /// show installed themes that use the legacy format
-    #[arg(short,long)]
-    pub legacy: bool,
-
-    
+    pub show_installed: bool,    
 }
 
 #[derive(Parser,Clone)]
 pub struct InstallArgs {
-    /// Either:
-    /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
-    /// - Git repository: https://github.com/hyprland-community/hyprtheme
-    /// - Github short-form: author/repo-name
-    // #[arg(short,long,value_parser=ThemeName::parse)]
-    // pub name: ThemeName,
-
     #[arg(short, long, group = "source")]
     pub git: Option<String>,
 
     #[arg(short, long, requires = "git")]
     pub branch: Option<String>,
 
+    /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to install
     #[arg(group = "source")]
     pub theme_id: Option<String>,
 }
@@ -114,6 +106,7 @@ pub struct UninstallArgs {
 
 #[derive(Parser,Clone)]
 pub struct UpdateArgs {
+    /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to update
     #[arg()]
     pub theme_id: String,
 
@@ -123,10 +116,6 @@ pub struct UpdateArgs {
 pub struct CleanAllArgs {
 }
 
-
-/// Parse an user-inputted path as PathBuf and verify that it exists
-///
-/// Useful for commands like `remove` where a non-existing path would not make sense
 pub fn parse_path(path: &str) -> Result<PathBuf> {
     let path: PathBuf = expanduser(path).expect("Failed to expand path");
     if path.try_exists()? {

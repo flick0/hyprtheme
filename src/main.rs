@@ -1,5 +1,6 @@
 mod cli;
 mod consts;
+mod config;
 mod theme;
 mod helper;
 
@@ -15,7 +16,7 @@ use helper::{identify_offline_theme,identify_theme};
 async fn parse_cli() -> Result<()> {
     let cli = CliParser::parse();
 
-    let hypr_dir = cli.hypr_dir;
+    // let hyprtheme_config = cli.config;
     let theme_dirs = cli.theme_dirs;
     let theme_urls = cli.theme_urls;
 
@@ -24,6 +25,91 @@ async fn parse_cli() -> Result<()> {
     // println!("Theme URLs: {:?}\n\n", theme_urls);
 
     match cli.commands {
+        CliCommands::Init => {
+            match config::init(&theme_dirs).await {
+                Ok(_) => {
+                    println!("Hyprtheme initialized");
+                },
+                Err(e) => {
+                    println!("Error initializing Hyprtheme: {}", e);
+                }
+            }
+        }
+        CliCommands::Disable(flags) => {
+            match identify_offline_theme(&flags.theme_id, &theme_dirs).await {
+                Ok(theme) => {
+                    println!("Disabling theme: {}", theme.get_name());
+                    match theme.as_any() {
+                        t if t.is::<theme::installed::InstalledTheme>() => {
+                            let mut theme = t.downcast_ref::<theme::installed::InstalledTheme>().unwrap().to_owned();
+
+                            if !theme.is_enabled() {
+                                println!("Theme already disabled");
+                                return Ok(());
+                            }
+
+                            match theme.disable() {
+                                Ok(_) => {
+                                    println!("Theme disabled");
+                                    helper::reload_hyprctl();
+                                    match config::init(&theme_dirs).await {
+                                        Ok(_) => {
+                                            println!("Hyprtheme initialized");
+                                        },
+                                        Err(e) => {
+                                            println!("Error initializing Hyprtheme: {}", e);
+                                        }
+                                    }
+                                },
+                                Err(e) => {
+                                    println!("Error disabling theme: {}", e);
+                                }
+                            }
+                        },
+                        _ => {
+                            println!("Theme not installed");
+                        }
+
+                    }
+                },
+                Err(e) => {
+                    println!("Error disabling theme: {}", e);
+                }
+            }
+        }
+        CliCommands::Enable(flags) => {
+            match identify_offline_theme(&flags.theme_id, &theme_dirs).await {
+                Ok(theme) => {
+                    println!("Enabling theme: {}", theme.get_name());
+                    match theme.as_any() {
+                        t if t.is::<theme::installed::InstalledTheme>() => {
+                            let mut theme = t.downcast_ref::<theme::installed::InstalledTheme>().unwrap().to_owned();
+
+                            if theme.is_enabled() {
+                                println!("Theme already enabled");
+                                return Ok(());
+                            }
+
+                            match theme.enable() {
+                                Ok(_) => {
+                                    println!("Theme enabled");
+                                },
+                                Err(e) => {
+                                    println!("Error enabling theme: {}", e);
+                                }
+                            }
+                        },
+                        _ => {
+                            println!("Theme not installed");
+                        }
+
+                    }
+                },
+                Err(e) => {
+                    println!("Error enabling theme: {}", e);
+                }
+            }
+        }
         CliCommands::List(mut flags) => {
             println!("listing themes");
 
@@ -123,7 +209,7 @@ async fn parse_cli() -> Result<()> {
                             }
                         },
                         _ => {
-                            println!("Theme cant be uninstalled");
+                            println!("Theme not installed");
                         }
 
                     }
@@ -152,7 +238,7 @@ async fn parse_cli() -> Result<()> {
                             }
                         },
                         _ => {
-                            println!("Theme cant be updated");
+                            println!("Theme not installed");
                         }
 
                     }
@@ -178,13 +264,8 @@ async fn main() -> ExitCode {
 
 fn ensure_default_dirs_exist() -> Result<()> {
     let _ = fs::create_dir_all(
-        expanduser(consts::DEFAULT_DOWNLOAD_PATH)
+        expanduser(consts::THEME_DOWNLOAD_DIR)
             .context("Failed to expand default download path.")?,
     )?;
-    let _ = fs::create_dir_all(
-        expanduser(consts::DEFAULT_HYPR_CONFIG_PATH)
-            .context("Failed to expand default hypr config path.")?,
-    )?;
-
     Ok(())
 }

@@ -1,9 +1,13 @@
+use crate::helper::reload_hyprctl;
+
 use super::online::OnlineTheme;
 use super::toml_config::Config;
 use super::{Theme,ThemeType,ThemeId};
 
+use expanduser::expanduser;
+
 use std::path::PathBuf;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use git2::Repository;
 
 #[derive(Debug,Clone)]
@@ -13,11 +17,12 @@ pub struct InstalledTheme {
     pub partial: Theme,
 
     pub parent_dir: PathBuf,
+    parent_config_path: Option<PathBuf>,
 }
 
 impl InstalledTheme {
 
-    pub fn from_dir(path: &PathBuf) -> Result<InstalledTheme> {
+    pub fn from_dir(path: &PathBuf, parent_config_path: Option<PathBuf>) -> Result<InstalledTheme> {
         
         let config_path = path.join("theme.toml");
         match Config::from_toml_file(&config_path) {
@@ -33,6 +38,7 @@ impl InstalledTheme {
                         config.desc,
                         Vec::new(),
                     ),
+                    parent_config_path
                 })
             }
             Err(e) => {
@@ -41,7 +47,7 @@ impl InstalledTheme {
         }
     }
 
-    pub fn from_file(path: &PathBuf) -> Result<InstalledTheme> {
+    pub fn from_file(path: &PathBuf, parent_config_path: Option<PathBuf>) -> Result<InstalledTheme> {
         match Config::from_toml_file(path) {
             Ok(config) => Ok(InstalledTheme {
                 config:config.clone(),
@@ -54,6 +60,7 @@ impl InstalledTheme {
                     config.desc,
                     Vec::new(),
                 ),
+                parent_config_path
             }),
             Err(e) => Err(e),
         }
@@ -80,9 +87,23 @@ impl InstalledTheme {
         let mut modules = Vec::new();
         for module in &self.config.module {
             let path = self.parent_dir.join(&module.config);
-            match InstalledTheme::from_file(&path) {
+            match InstalledTheme::from_file(&path, Some(self.path.clone())) {
                 Ok(theme) => modules.push(theme),
                 Err(_) => continue,
+            }
+        }
+        modules
+    }
+
+    pub fn get_enabled_modules(&self) -> Vec<InstalledTheme> {
+        let mut modules = Vec::new();
+        for module in &self.config.module {
+            if module.enabled {
+                let path = self.parent_dir.join(&module.config);
+                match InstalledTheme::from_file(&path, Some(self.path.clone())) {
+                    Ok(theme) => modules.push(theme),
+                    Err(_) => continue,
+                }
             }
         }
         modules
@@ -96,41 +117,152 @@ impl InstalledTheme {
         links
     }
 
-    pub fn get_hypr_modules(&self) -> Vec<PathBuf> {
-        let mut configs = Vec::new();
-        for module in &self.config.hypr_module {
-            let path = self.parent_dir.join(&module.config);
-            configs.push(path);
-        }
-        configs
-    }
+    // pub fn get_hypr_modules(&self) -> Vec<PathBuf> {
+    //     let mut configs = Vec::new();
+    //     for module in &self.config.hypr_module {
+    //         let path = self.parent_dir.join(&module.config);
+    //         configs.push(path);
+    //     }
+    //     configs
+    // }
+
+    // pub fn get_enabled_hypr_modules(&self) -> Vec<PathBuf> {
+    //     let mut configs = Vec::new();
+    //     for module in &self.config.hypr_module {
+    //         let path = self.parent_dir.join(&module.config);
+    //         if module.enabled {
+    //             configs.push(path);
+    //         }
+    //     }
+    //     configs
+    // }
 
     pub fn get_hypr_config(&self) -> PathBuf {
         self.config.theme.config.clone()
     }
 
-    pub fn load(&self) -> Result<()> {
+    pub fn load(&self) {
         if let Some(load) = &self.config.theme.load {
-            let path = self.parent_dir.join(load);
+            let path = expanduser(self.parent_dir.join(load).to_str().unwrap()).unwrap();
             match std::process::Command::new(path).output() {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e.into()),
+                Ok(_) => {},
+                Err(e) => eprintln!("Failed to run load script for theme: {}", e),
             }
-        } else {
-            Ok(())
         }
     }
 
-    pub fn unload(&self) -> Result<()> {
+    pub fn unload(&self) {
         if let Some(unload) = &self.config.theme.unload {
-            let path = self.parent_dir.join(unload);
+            let path = expanduser(self.parent_dir.join(unload).to_str().unwrap()).unwrap();
             match std::process::Command::new(path).output() {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e.into()),
+                Ok(_) => {},
+                Err(e) => eprintln!("Failed to run unload script for theme: {}", e),
             }
-        } else {
-            Ok(())
         }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.config.enabled
+    }
+
+    pub fn is_module(&self) -> bool {
+        self.parent_config_path.is_some()
+    }
+
+    pub fn save(&self) -> Result<()> {
+        let content = match toml::to_string(&self.config) {
+            Ok(c) => c,
+            Err(e) => return Err(e.into()),
+        };
+        match std::fs::write(&self.path, content) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    pub fn run_hyprctl_source(&self) {
+
+        let mut path = self.parent_dir.join(&self.config.theme.config);
+
+        path = expanduser(path.to_str().unwrap()).unwrap();
+
+        let cmd = format!("hyprctl keyword source {}", path.display());
+
+        println!("Running: {}", cmd);
+
+        match std::process::Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .output() {
+                Ok(out) => println!("output: {}", String::from_utf8_lossy(&out.stdout)),
+                Err(e) => eprintln!("Failed to run hyprctl source: {}", e),
+            }
+    }
+
+    pub fn enable(&mut self) -> Result<()> {
+        self.config.enabled = true;
+
+        self.load();
+
+        if let Some(path) = &self.parent_config_path {
+            match InstalledTheme::from_file(path, None) {
+                Ok(mut parent) => {
+                    for module in &mut parent.config.module {
+                        if module.config == self.path {
+                            module.enabled = true;
+                        }
+                    }
+                    match parent.save() {
+                        Ok(_) => (),
+                        Err(e) => return Err(e),
+                    }
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+        }
+
+        match self.save() {
+            Ok(_) => {},
+            Err(e) => return Err(anyhow!("error saving file on enable: {}",e)),
+        };
+
+        self.run_hyprctl_source();
+
+        Ok(())
+    }
+
+    pub fn disable(&mut self) -> Result<()> {
+        self.config.enabled = false;
+
+        self.unload();
+
+        if let Some(path) = &self.parent_config_path {
+            match InstalledTheme::from_file(path, None) {
+                Ok(mut parent) => {
+                    for module in &mut parent.config.module {
+                        if module.config == self.path {
+                            module.enabled = false;
+                        }
+                    }
+                    match parent.save() {
+                        Ok(_) => (),
+                        Err(e) => return Err(e),
+                    }
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+        }
+
+        match self.save() {
+            Ok(_) => {},
+            Err(e) => return Err(e),
+        };
+
+        Ok(())
     }
 }
 

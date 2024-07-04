@@ -1,5 +1,3 @@
-/// The default hypr config directory
-pub const DEFAULT_HYPR_CONFIG_PATH: &str = "~/.config/hypr/";
-
-/// The path theme repos are downloaded to
-pub const DEFAULT_DOWNLOAD_PATH: &str = "~/.config/hyprtheme/";
+pub const THEME_DOWNLOAD_DIR : &str = "~/.config/hyprtheme/themes/";
+pub const HYPRTHEME_CONFIG: &str = "~/.config/hyprtheme/hyprtheme.json";
+pub const THEME_LIST: &str = "https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true";

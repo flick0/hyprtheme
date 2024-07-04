@@ -3,6 +3,13 @@ use anyhow::Result;
 
 use crate::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
 
+pub fn reload_hyprctl() {
+    std::process::Command::new("hyprctl")
+        .arg("reload")
+        .spawn()
+        .expect("Failed to reload hyprctl");
+}
+
 pub fn sanitize_name(name:&str) -> String{
     let mut name = name.to_string();
     name = name.replace(" ","-");
