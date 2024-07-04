@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use super::{installed::InstalledTheme, Theme, ThemeId, ThemeType};
 use anyhow::Result;
@@ -17,7 +17,7 @@ impl OnlineTheme {
         OnlineTheme { partial }
     }
 
-    pub fn download(self, theme_dir: &PathBuf) -> Result<InstalledTheme> {
+    pub fn download(self, theme_dir: &Path) -> Result<InstalledTheme> {
         let url = &self.partial.repo;
         let branch = sanitize_name(&self.partial.branch.clone().unwrap_or("main".to_string()));
 
@@ -25,9 +25,7 @@ impl OnlineTheme {
 
         match RepoBuilder::new().branch(branch.as_str()).clone(url, &into) {
             Ok(_) => InstalledTheme::from_file(&into.join("hyprtheme.toml"), None),
-            Err(e) => {
-                return Err(anyhow::anyhow!("Failed to clone theme: {}", e));
-            }
+            Err(e) => Err(anyhow::anyhow!("Failed to clone theme: {}", e)),
         }
     }
 }

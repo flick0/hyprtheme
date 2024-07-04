@@ -257,9 +257,14 @@ async fn main() -> ExitCode {
 }
 
 fn ensure_default_dirs_exist() -> Result<()> {
-    let _ = fs::create_dir_all(
+    match fs::create_dir_all(
         expanduser(consts::THEME_DOWNLOAD_DIR)
             .context("Failed to expand default download path.")?,
-    )?;
-    Ok(())
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(anyhow::anyhow!(
+            "Failed to create default download path: {}",
+            e
+        )),
+    }
 }

@@ -24,7 +24,7 @@ pub fn sanitize_name(name: &str) -> String {
     name = name.replace("<", "-");
     name = name.replace(">", "-");
     name = name.replace("|", "-");
-    return name;
+    name
 }
 
 pub async fn identify_theme(
@@ -37,7 +37,7 @@ pub async fn identify_theme(
     match fetch_all(theme_urls, theme_dirs).await {
         Ok(themes) => {
             for theme in themes {
-                if theme.get_id().to_string().to_lowercase() == theme_id.to_lowercase() {
+                if theme.get_id().get_string().to_lowercase() == theme_id.to_lowercase() {
                     matches.clear();
                     matches.push(theme);
                     break;
@@ -52,14 +52,14 @@ pub async fn identify_theme(
         }
     }
 
-    return match matches.len() {
+    match matches.len() {
         0 => Err(anyhow::anyhow!("No themes found with id: {}", theme_id)),
         1 => Ok(matches.remove(0)),
         _ => Err(anyhow::anyhow!(
             "Multiple themes found with id: {}",
             theme_id
         )),
-    };
+    }
 }
 
 pub async fn identify_offline_theme(
@@ -71,7 +71,7 @@ pub async fn identify_offline_theme(
     match fetch_all_installed(theme_dirs).await {
         Ok(themes) => {
             for theme in themes {
-                if theme.get_id().to_string().to_lowercase() == theme_id.to_lowercase() {
+                if theme.get_id().get_string().to_lowercase() == theme_id.to_lowercase() {
                     matches.push(theme);
                     break;
                 }
@@ -85,12 +85,12 @@ pub async fn identify_offline_theme(
         }
     }
 
-    return match matches.len() {
+    match matches.len() {
         0 => Err(anyhow::anyhow!("No themes found with id: {}", theme_id)),
         1 => Ok(matches.remove(0)),
         _ => Err(anyhow::anyhow!(
             "Multiple themes found with id: {}",
             theme_id
         )),
-    };
+    }
 }

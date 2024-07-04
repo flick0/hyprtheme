@@ -2,10 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use crate::theme::{
-    fetch_all_installed,
-    installed::InstalledTheme,
-};
+use crate::theme::{fetch_all_installed, installed::InstalledTheme};
 
 pub async fn get_enabled_themes(theme_dirs: &Vec<PathBuf>) -> Result<Vec<InstalledTheme>> {
     let mut enabled_themes = Vec::new();
@@ -31,7 +28,7 @@ pub async fn get_enabled_themes(theme_dirs: &Vec<PathBuf>) -> Result<Vec<Install
         }
     }
 
-    return Ok(enabled_themes);
+    Ok(enabled_themes)
 }
 
 // pub async fn get_all_source_paths(theme_dirs: &Vec<PathBuf>) -> Result<Vec<PathBuf>> {
@@ -72,5 +69,5 @@ pub async fn init(theme_dirs: &Vec<PathBuf>) -> Result<()> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }

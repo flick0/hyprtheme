@@ -13,7 +13,7 @@ use reqwest::Client;
 
 use installed::InstalledTheme;
 
-#[derive(Hash, Eq, Default, Clone)]
+#[derive(Eq, Default, Clone)]
 pub struct ThemeId {
     pub repo: String,
     pub branch: Option<String>,
@@ -24,7 +24,7 @@ impl ThemeId {
         ThemeId { repo, branch }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn get_string(&self) -> String {
         match &self.branch {
             Some(branch) => format!("{}@{}", self.repo, branch),
             None => self.repo.clone(),
@@ -41,7 +41,7 @@ impl ThemeId {
 
 impl Display for ThemeId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{}", self.to_string());
+        write!(f, "{}", self.get_string())
     }
 }
 
@@ -51,7 +51,7 @@ impl PartialEq for ThemeId {
             return false;
         }
 
-        if self.repo == "" || other.repo == "" {
+        if self.repo.is_empty() || other.repo.is_empty() {
             return false;
         }
 
@@ -74,17 +74,17 @@ pub trait ThemeType: Any {
 
 impl Display for dyn ThemeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(
+        write!(
             f,
             "Theme: {}::{} [{}]",
             &self.get_name(),
             &self.get_id(),
             &self.get_type_string()
-        );
+        )
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, Default)]
 pub struct Theme {
     pub name: String,
     pub repo: String,
@@ -94,18 +94,18 @@ pub struct Theme {
     pub images: Vec<String>,
 }
 
-impl Default for Theme {
-    fn default() -> Self {
-        Theme {
-            name: String::new(),
-            repo: String::new(),
-            branch: None,
-            config: None,
-            desc: String::new(),
-            images: Vec::new(),
-        }
-    }
-}
+// impl Default for Theme {
+//     fn default() -> Self {
+//         Theme {
+//             name: String::new(),
+//             repo: String::new(),
+//             branch: None,
+//             config: None,
+//             desc: String::new(),
+//             images: Vec::new(),
+//         }
+//     }
+// }
 
 impl Theme {
     pub fn new(
@@ -157,7 +157,7 @@ pub async fn fetch_online(
 ) -> Result<Vec<OnlineTheme>> {
     let client = Client::new();
 
-    let blacklist_ids = blacklist_ids.unwrap_or(Vec::new());
+    let blacklist_ids = blacklist_ids.unwrap_or_default();
 
     #[derive(Deserialize, Debug)]
     struct ThemesData {
@@ -202,7 +202,7 @@ pub async fn fetch_all_installed(directories: &Vec<PathBuf>) -> Result<Vec<Box<d
     let mut themes: Vec<Box<dyn ThemeType>> = Vec::new();
 
     for dir in directories {
-        match fetch_installed(&dir).await {
+        match fetch_installed(dir).await {
             Ok(installed_themes) => {
                 for theme in installed_themes {
                     themes.push(Box::new(theme.clone()));
@@ -218,7 +218,7 @@ pub async fn fetch_all_installed(directories: &Vec<PathBuf>) -> Result<Vec<Box<d
 }
 
 pub async fn fetch_all(
-    urls: &Vec<String>,
+    urls: &[String],
     directories: &Vec<PathBuf>,
 ) -> Result<Vec<Box<dyn ThemeType>>> {
     let mut themes: Vec<Box<dyn ThemeType>> = Vec::new();
@@ -226,7 +226,7 @@ pub async fn fetch_all(
     let mut theme_ids: Vec<ThemeId> = Vec::new();
 
     for dir in directories {
-        match fetch_installed(&dir).await {
+        match fetch_installed(dir).await {
             Ok(installed_themes) => {
                 for theme in installed_themes {
                     themes.push(Box::new(theme.clone()));
