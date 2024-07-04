@@ -1,4 +1,4 @@
-use crate::consts::{HYPRTHEME_CONFIG, THEME_DOWNLOAD_DIR, THEME_LIST};
+use crate::consts::{THEME_DOWNLOAD_DIR, THEME_LIST};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use expanduser::expanduser;

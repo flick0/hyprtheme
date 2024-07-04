@@ -1,7 +1,7 @@
 use anyhow::Result;
-use std::{f32::consts::E, path::PathBuf};
+use std::path::PathBuf;
 
-use crate::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
+use crate::theme::{fetch_all, fetch_all_installed, ThemeType};
 
 pub fn reload_hyprctl() {
     std::process::Command::new("hyprctl")

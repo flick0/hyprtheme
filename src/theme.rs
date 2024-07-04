@@ -67,8 +67,8 @@ pub trait ThemeType: Any {
     fn get_name(&self) -> String;
     fn get_repo(&self) -> String;
     fn get_branch(&self) -> Option<String>;
-    fn get_desc(&self) -> String;
-    fn get_images(&self) -> Vec<String>;
+    // fn get_desc(&self) -> String;
+    // fn get_images(&self) -> Vec<String>;
     fn get_type_string(&self) -> String;
 }
 

@@ -1,5 +1,3 @@
-use crate::helper::reload_hyprctl;
-
 use super::online::OnlineTheme;
 use super::toml_config::Config;
 use super::{Theme, ThemeId, ThemeType};
@@ -21,26 +19,6 @@ pub struct InstalledTheme {
 }
 
 impl InstalledTheme {
-    pub fn from_dir(path: &PathBuf, parent_config_path: Option<PathBuf>) -> Result<InstalledTheme> {
-        let config_path = path.join("theme.toml");
-        match Config::from_toml_file(&config_path) {
-            Ok(config) => Ok(InstalledTheme {
-                config: config.clone(),
-                path: config_path.clone(),
-                parent_dir: path.clone(),
-                partial: Theme::new(
-                    config.name,
-                    config.repo,
-                    config.branch,
-                    config.desc,
-                    Vec::new(),
-                ),
-                parent_config_path,
-            }),
-            Err(e) => Err(e.into()),
-        }
-    }
-
     pub fn from_file(
         path: &PathBuf,
         parent_config_path: Option<PathBuf>,
@@ -289,11 +267,11 @@ impl ThemeType for InstalledTheme {
         self.partial.branch.clone()
     }
 
-    fn get_desc(&self) -> String {
-        self.partial.desc.clone()
-    }
+    // fn get_desc(&self) -> String {
+    //     self.partial.desc.clone()
+    // }
 
-    fn get_images(&self) -> Vec<String> {
-        self.partial.images.clone()
-    }
+    // fn get_images(&self) -> Vec<String> {
+    //     self.partial.images.clone()
+    // }
 }

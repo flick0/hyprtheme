@@ -1,15 +1,10 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use expanduser::expanduser;
-use serde::Deserialize;
 
 use crate::theme::{
     fetch_all_installed,
     installed::InstalledTheme,
-    online::OnlineTheme,
-    toml_config::{ConfigModule, ConfigTheme},
-    ThemeType,
 };
 
 pub async fn get_enabled_themes(theme_dirs: &Vec<PathBuf>) -> Result<Vec<InstalledTheme>> {
@@ -39,30 +34,30 @@ pub async fn get_enabled_themes(theme_dirs: &Vec<PathBuf>) -> Result<Vec<Install
     return Ok(enabled_themes);
 }
 
-pub async fn get_all_source_paths(theme_dirs: &Vec<PathBuf>) -> Result<Vec<PathBuf>> {
-    let mut source_paths = Vec::new();
+// pub async fn get_all_source_paths(theme_dirs: &Vec<PathBuf>) -> Result<Vec<PathBuf>> {
+//     let mut source_paths = Vec::new();
 
-    match get_enabled_themes(theme_dirs).await {
-        Ok(themes) => {
-            for theme in themes {
-                source_paths.push(theme.config.theme.config.to_owned());
+//     match get_enabled_themes(theme_dirs).await {
+//         Ok(themes) => {
+//             for theme in themes {
+//                 source_paths.push(theme.config.theme.config.to_owned());
 
-                for module in &theme.get_enabled_modules() {
-                    source_paths.push(module.config.theme.config.to_owned());
-                }
+//                 for module in &theme.get_enabled_modules() {
+//                     source_paths.push(module.config.theme.config.to_owned());
+//                 }
 
-                // for hypr_module in theme.get_enabled_hypr_modules() {
-                //     source_paths.push(hypr_module.to_owned());
-                // }
-            }
-        }
-        Err(e) => {
-            eprintln!("Failed to get enabled themes: {:?}", e);
-        }
-    }
+//                 // for hypr_module in theme.get_enabled_hypr_modules() {
+//                 //     source_paths.push(hypr_module.to_owned());
+//                 // }
+//             }
+//         }
+//         Err(e) => {
+//             eprintln!("Failed to get enabled themes: {:?}", e);
+//         }
+//     }
 
-    Ok(source_paths)
-}
+//     Ok(source_paths)
+// }
 
 pub async fn init(theme_dirs: &Vec<PathBuf>) -> Result<()> {
     match get_enabled_themes(theme_dirs).await {

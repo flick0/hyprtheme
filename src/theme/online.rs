@@ -60,11 +60,11 @@ impl ThemeType for OnlineTheme {
         self.partial.branch.clone()
     }
 
-    fn get_desc(&self) -> String {
-        self.partial.desc.clone()
-    }
+    // fn get_desc(&self) -> String {
+    //     self.partial.desc.clone()
+    // }
 
-    fn get_images(&self) -> Vec<String> {
-        self.partial.images.clone()
-    }
+    // fn get_images(&self) -> Vec<String> {
+    //     self.partial.images.clone()
+    // }
 }

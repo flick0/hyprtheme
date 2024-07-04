@@ -11,7 +11,7 @@ use expanduser::expanduser;
 use std::{fs, process::ExitCode};
 
 use helper::{identify_offline_theme, identify_theme};
-use theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
+use theme::{fetch_all_installed, fetch_online, ThemeType};
 
 async fn parse_cli() -> Result<()> {
     let cli = CliParser::parse();
