@@ -8,6 +8,8 @@ use anyhow::{anyhow, Result};
 use git2::Repository;
 use std::path::PathBuf;
 
+use std::os::unix::fs::symlink;
+
 #[derive(Debug, Clone)]
 pub struct InstalledTheme {
     pub config: Config,
@@ -89,7 +91,27 @@ impl InstalledTheme {
     pub fn get_links(&self) -> Vec<(PathBuf, PathBuf)> {
         let mut links = Vec::new();
         for link in &self.config.link {
-            links.push((link.from.clone(), link.to.clone()));
+            let from = {
+                if link.from.starts_with("~") {
+                    expanduser(&link.from.to_str().unwrap()).unwrap()
+                } else {
+                    match link.from.is_absolute() {
+                        true => link.from.clone(),
+                        false => self.parent_dir.join(&link.from),
+                    }
+                }
+            };
+            let to = {
+                if link.to.starts_with("~") {
+                    expanduser(&link.to.to_str().unwrap()).unwrap()
+                } else {
+                    match link.to.is_absolute() {
+                        true => link.to.clone(),
+                        false => self.parent_dir.join(&link.to),
+                    }
+                }
+            };
+            links.push((from, to));
         }
         links
     }
@@ -177,6 +199,32 @@ impl InstalledTheme {
 
         self.load();
 
+        for (from,to) in &self.get_links() {
+            // backup existing file
+            if to.exists() {
+                // rename to .bak
+                let mut bak = to.clone().into_os_string();
+                bak.push(".hyprtheme.bak");
+                let bak = PathBuf::from(bak);
+                match std::fs::rename(&to, &bak) {
+                    Ok(_) => println!("Backed up file: ({:?})", bak),
+                    Err(e) => {
+                        println!("Error backing up file({:?}): {:?}", to, e);
+                    },
+                }
+                
+            }
+
+            // create symlink
+            match symlink(&from, &to) {
+                Ok(_) => println!("Created symlink: {:?} -> {:?}", to, from),
+                Err(e) => {
+                    println!("Error creating symlink({:?} -> {:?}): {:?}",from , to, e);
+                },
+            }
+            
+        }
+
         if let Some(path) = &self.parent_config_path {
             match InstalledTheme::from_file(path, None) {
                 Ok(mut parent) => {
@@ -210,6 +258,31 @@ impl InstalledTheme {
         self.config.enabled = false;
 
         self.unload();
+
+        for (from,to) in &self.get_links() {
+            // remove symlink
+            match std::fs::remove_file(&to) {
+                Ok(_) => println!("Removed symlink: {:?}", to),
+                Err(e) => {
+                    println!("Error removing symlink({:?}): {:?}",to, e);
+                },
+            }
+
+            // restore backup
+            let mut bak = to.clone().into_os_string();
+            bak.push(".hyprtheme.bak");
+            let bak = PathBuf::from(bak);
+            if bak.exists() {
+                match std::fs::rename(&bak, &to) {
+                    Ok(_) => println!("Restored backup: {:?}", to),
+                    Err(e) => {
+                        println!("Error restoring backup({:?}): {:?}",bak , e);
+                    },
+                }
+            } else {
+                eprintln!("No backup found for link: {:?}", to);
+            }
+        }
 
         if let Some(path) = &self.parent_config_path {
             match InstalledTheme::from_file(path, None) {
