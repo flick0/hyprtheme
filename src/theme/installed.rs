@@ -143,8 +143,8 @@ impl InstalledTheme {
     pub fn load(&self) {
         if let Some(load) = &self.config.theme.load {
             let path = expanduser(self.parent_dir.join(load).to_str().unwrap()).unwrap();
-            match std::process::Command::new(path).output() {
-                Ok(_) => {}
+            match std::process::Command::new(&path).arg(&self.parent_dir).output() {
+                Ok(_) => {println!("run load script: {:?}", path);},
                 Err(e) => eprintln!("Failed to run load script for theme: {}", e),
             }
         }
@@ -153,8 +153,8 @@ impl InstalledTheme {
     pub fn unload(&self) {
         if let Some(unload) = &self.config.theme.unload {
             let path = expanduser(self.parent_dir.join(unload).to_str().unwrap()).unwrap();
-            match std::process::Command::new(path).output() {
-                Ok(_) => {}
+            match std::process::Command::new(&path).arg(&self.parent_dir).output() {
+                Ok(_) => {println!("run unload script: {:?}", path);},
                 Err(e) => eprintln!("Failed to run unload script for theme: {}", e),
             }
         }
